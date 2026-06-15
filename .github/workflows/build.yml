@@ -2,6 +2,8 @@ name: Build & Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -10,6 +12,8 @@ jobs:
   export-linux:
     name: Export Linux (Steam Deck)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +23,7 @@ jobs:
           GODOT_VERSION="4.2.2"
           wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O /tmp/godot.zip
           unzip -q /tmp/godot.zip -d /tmp/godot
-          sudo mv /tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
+          sudo mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
           sudo chmod +x /usr/local/bin/godot
 
       - name: Install export templates
@@ -49,11 +53,33 @@ jobs:
           name: kouya-kou-linux
           path: build/kouya-kou-linux-x86_64.tar.gz
 
-      - name: Create GitHub Release
+      # main push → "latest" プレリリースを常に上書き
+      - name: Update latest pre-release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes 2>/dev/null || true
+          git push origin :refs/tags/latest 2>/dev/null || true
+          gh release create latest \
+            --title "Latest Build (main)" \
+            --prerelease \
+            --notes "mainブランチの最新ビルドです。main に push されるたびに上書きされます。
+
+## Steam Deck でのインストール
+
+\`\`\`bash
+mkdir -p ~/games/kouya-kou && cd ~/games/kouya-kou
+curl -L https://github.com/${{ github.repository }}/releases/download/latest/kouya-kou-linux-x86_64.tar.gz | tar xz
+./kouya-kou.x86_64
+\`\`\`" \
+            build/kouya-kou-linux-x86_64.tar.gz
+
+      # tag push (v*) → 正式バージョンリリース
+      - name: Create versioned release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          draft: false
           files: build/kouya-kou-linux-x86_64.tar.gz
           body: |
             ## Steam Deck でのインストール方法

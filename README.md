@@ -10,7 +10,7 @@
 
 ```bash
 mkdir -p ~/games/kouya-kou && cd ~/games/kouya-kou
-curl -L https://github.com/fillu87gyc/kyk/releases/latest/download/kouya-kou-linux-x86_64.tar.gz | tar xz
+curl -L https://github.com/fillu87gyc/kyk/releases/download/latest/kouya-kou-linux-x86_64.tar.gz | tar xz
 ./kouya-kou.x86_64
 ```
 
