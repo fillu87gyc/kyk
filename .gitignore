@@ -1,0 +1,30 @@
+# Godot 4
+.godot/
+*.uid
+
+# Export
+export/
+*.pck
+*.apk
+*.aab
+*.ipa
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# MODアセット本体（ローカルのみ・版権管理は利用者責任）
+mods/*/model.glb
+mods/*/model.fbx
+mods/*/model.gltf
+mods/*/animations/
+mods/*/presenter.gd
+mods/*/textures/
+
+# MODメタデータはコミットOK（構造のドキュメントになる）
+!mods/*/mod.json
+!mods/README.md
