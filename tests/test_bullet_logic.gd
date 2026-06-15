@@ -52,8 +52,8 @@ func test_ring_velocities_are_horizontal() -> void:
 func test_ring_directions_spread() -> void:
 	# 16 発のリングは互いに異なる方向を向く（少なくとも 2 方向以上）
 	var bullets := BulletLogic.spawn_ring(Vector3.ZERO, 16, 3.0, _rng)
-	var first := bullets[0].velocity.normalized()
-	var opposite := bullets[8].velocity.normalized()
+	var first: Vector3 = bullets[0].velocity.normalized()
+	var opposite: Vector3 = bullets[8].velocity.normalized()
 	assert_lt(first.dot(opposite), 0.0,
 		"対角（i=0 と i=8）の弾はほぼ逆方向を向く")
 
@@ -97,7 +97,7 @@ func test_aimed_spread_is_symmetric() -> void:
 func test_step_moves_bullets() -> void:
 	_rng.seed = 42
 	var bullets := BulletLogic.spawn_ring(Vector3.ZERO, 4, 3.0, _rng)
-	var initial_pos := bullets[0].position
+	var initial_pos: Vector3 = bullets[0].position
 	BulletLogic.step(bullets, 1.0)
 	assert_ne(bullets[0].position, initial_pos, "step 後に弾は移動する")
 

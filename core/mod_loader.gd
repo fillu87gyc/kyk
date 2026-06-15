@@ -13,7 +13,7 @@ static func load_boss_presenter() -> BossPresenter:
 					var text := FileAccess.get_file_as_string(meta_path)
 					var meta = JSON.parse_string(text)
 					if meta and meta.get("target") == "boss":
-						var presenter_path := mod_path + entry + "/" + meta["presenter"]
+						var presenter_path: String = mod_path + entry + "/" + str(meta["presenter"])
 						if ResourceLoader.exists(presenter_path):
 							var scr = load(presenter_path)
 							if scr:

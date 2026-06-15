@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://bkouya0game01"]
+[gd_scene load_steps=14 format=3 uid="uid://bkouya0game01"]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
@@ -26,16 +26,24 @@ albedo_color = Color(1, 1, 0, 0.5)
 transparency = 1
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
-sky_top_color = Color(0.02, 0.0, 0.08)
-sky_horizon_color = Color(0.08, 0.0, 0.15)
-ground_bottom_color = Color(0.01, 0.0, 0.04)
-ground_horizon_color = Color(0.04, 0.0, 0.08)
+sky_top_color = Color(0.02, 0.0, 0.08, 1)
+sky_horizon_color = Color(0.08, 0.0, 0.15, 1)
+ground_bottom_color = Color(0.01, 0.0, 0.04, 1)
+ground_horizon_color = Color(0.04, 0.0, 0.08, 1)
+
+[sub_resource type="Sky" id="Sky_world"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env_world"]
+background_mode = 2
+sky = SubResource("Sky_world")
+ambient_light_source = 3
 
 [node name="Game" type="Node3D"]
 script = ExtResource("1_game")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = Environment.new()
+environment = SubResource("Env_world")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 10)
