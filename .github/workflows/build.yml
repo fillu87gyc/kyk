@@ -2,6 +2,8 @@ name: Build & Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -48,6 +50,30 @@ jobs:
         with:
           name: kouya-kou-linux
           path: build/kouya-kou-linux-x86_64.tar.gz
+
+      - name: Update latest release (main branch)
+        if: github.ref == 'refs/heads/main'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: "Latest Build (main)"
+          prerelease: true
+          allowUpdates: true
+          removeArtifacts: true
+          artifacts: "build/kouya-kou-linux-x86_64.tar.gz"
+          body: |
+            mainブランチの最新ビルドです。pushのたびに自動更新されます。
+
+            **コミット:** ${{ github.sha }}
+            **更新日時:** ${{ github.event.head_commit.timestamp }}
+
+            ## Steam Deck でのインストール方法
+
+            ```bash
+            mkdir -p ~/games/kouya-kou && cd ~/games/kouya-kou
+            curl -L https://github.com/${{ github.repository }}/releases/download/latest/kouya-kou-linux-x86_64.tar.gz | tar xz
+            ./kouya-kou.x86_64
+            ```
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
