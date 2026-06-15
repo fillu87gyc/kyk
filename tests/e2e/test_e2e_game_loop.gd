@@ -14,6 +14,10 @@
 #   E2E-8  開始でボス Presenter が ATTACK へ … CUJ-8
 #   E2E-12 ゲームループがボス表現を駆動する   … CUJ-8
 #   E2E-13 停止中はボス表現を駆動しない       … CUJ-8
+#   E2E-14 左移動で弾を回避                  … CUJ-3
+#   E2E-15 右移動で弾を回避                  … CUJ-3
+#   E2E-16 上移動で弾を回避                  … CUJ-3
+#   E2E-17 下移動で弾を回避                  … CUJ-3
 #
 # ノードは独自スクリプトのメンバーへ動的アクセスするため、型注釈を付けず Variant で扱う。
 extends GutTest
@@ -136,3 +140,48 @@ func test_stopped_game_does_not_drive_boss_animation() -> void:
 	_game._physics_process(0.1)
 	assert_almost_eq(presenter._mesh_instance.scale.x, 1.0, 0.0001,
 		"停止中はゲームループがボス表現を進めない")
+
+# E2E-14〜17 -----------------------------------------------------------
+# WASD 4方向の入力→移動→回避の一連を E2E で検証する。
+#
+# wait_seconds(0.2) は 60Hz×0.2s ≒ 12 物理フレームを保証するので、
+# wait_frames より信頼性が高い（headless の速度依存を避けられる）。
+# move_and_slide() は物理エンジン内部のデルタを使うため、
+# _physics_process() を直接呼ぶと移動しない——実際のフレームが必要。
+
+func test_player_dodges_moving_left() -> void:
+	await _assert_dodge_direction("move_left", Vector3(-1, 0, 0))
+
+func test_player_dodges_moving_right() -> void:
+	await _assert_dodge_direction("move_right", Vector3(1, 0, 0))
+
+func test_player_dodges_moving_up() -> void:
+	await _assert_dodge_direction("move_up", Vector3(0, 0, -1))
+
+func test_player_dodges_moving_down() -> void:
+	await _assert_dodge_direction("move_down", Vector3(0, 0, 1))
+
+# action を 0.2 秒押して「正しい方向へ ≥0.5 単位移動」かつ「元の位置の弾を回避」を確認。
+func _assert_dodge_direction(action: String, expected_dir: Vector3) -> void:
+	_game.start(777)
+	var p = _player()
+	var bm = _bullets()
+	p.global_position = Vector3.ZERO
+	bm.reset() # 弾を空にしてウェーブタイマーもリセット（0.2s では湧かない）
+
+	Input.action_press(action)
+	await wait_seconds(0.2) # 物理フレームを十分回す（≥12 フレーム）
+	Input.action_release(action)
+
+	# 正しい方向へ移動したか（速度 8 × 0.2s = 1.6 単位を期待）
+	var displacement := p.global_position - Vector3.ZERO
+	assert_gt(displacement.dot(expected_dir), 0.5,
+		action + " で正しい方向へ 0.5 単位以上移動する")
+
+	# 移動後の位置から元の位置の弾を当たり判定 → ヒットしないこと
+	bm.reset()
+	bm._bullets = [BulletLogic.BulletState.new(Vector3.ZERO, Vector3.ZERO)]
+	watch_signals(bm)
+	bm.check_collisions(p.global_position)
+	assert_signal_not_emitted(bm, "bullet_hit_player",
+		action + " で移動後は出発点の弾を回避している")
