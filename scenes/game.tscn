@@ -1,0 +1,93 @@
+[gd_scene load_steps=12 format=3 uid="uid://bkouya0game01"]
+
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
+[ext_resource type="Script" path="res://scripts/bullet_manager.gd" id="3_bullets"]
+[ext_resource type="Script" path="res://core/procedural_presenter.gd" id="4_presenter"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_player"]
+size = Vector3(0.6, 0.2, 1.0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_player"]
+size = Vector3(0.6, 0.2, 1.0)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_hit"]
+radius = 0.15
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_graze"]
+radius = 0.40
+
+[sub_resource type="SphereMesh" id="SphereMesh_hitvis"]
+radius = 0.15
+height = 0.30
+
+[sub_resource type="StandardMaterial3D" id="Mat_hitvis"]
+albedo_color = Color(1, 1, 0, 0.5)
+transparency = 1
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.02, 0.0, 0.08)
+sky_horizon_color = Color(0.08, 0.0, 0.15)
+ground_bottom_color = Color(0.01, 0.0, 0.04)
+ground_horizon_color = Color(0.04, 0.0, 0.08)
+
+[node name="Game" type="Node3D"]
+script = ExtResource("1_game")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = Environment.new()
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 10)
+light_energy = 1.5
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.819152, 0.573576, 0, -0.573576, 0.819152, 0, 10, 15)
+fov = 55.0
+
+[node name="Player" type="CharacterBody3D" parent="."]
+script = ExtResource("2_player")
+
+[node name="PlayerMesh" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("BoxMesh_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("BoxShape3D_player")
+
+[node name="HitboxVisual" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("SphereMesh_hitvis")
+visible = false
+material_override = SubResource("Mat_hitvis")
+
+[node name="BulletManager" type="Node3D" parent="."]
+script = ExtResource("3_bullets")
+
+[node name="BossPresenterSlot" type="Node3D" parent="."]
+position = Vector3(0, 0, -4)
+script = ExtResource("4_presenter")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="ScoreLabel" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 300.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 24
+text = "SCORE: 0"
+
+[node name="LivesLabel" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 54.0
+offset_right = 300.0
+offset_bottom = 84.0
+theme_override_font_sizes/font_size = 24
+text = "LIVES: 3"
+
+[node name="GrazeLabel" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 88.0
+offset_right = 300.0
+offset_bottom = 118.0
+theme_override_font_sizes/font_size = 24
+text = "GRAZE: 0"

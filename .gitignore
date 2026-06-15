@@ -3,11 +3,15 @@
 *.uid
 
 # Export
+build/
 export/
 *.pck
 *.apk
 *.aab
 *.ipa
+
+# GUT addon (install separately via AssetLib)
+addons/gut/
 
 # OS
 .DS_Store
