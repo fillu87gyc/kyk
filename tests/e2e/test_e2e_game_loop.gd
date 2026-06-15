@@ -12,6 +12,8 @@
 #   E2E-6  残機 0 でゲームオーバー          … CUJ-7
 #   E2E-7  ウェーブで弾幕が湧く             … CUJ-4
 #   E2E-8  開始でボス Presenter が ATTACK へ … CUJ-8
+#   E2E-12 ゲームループがボス表現を駆動する   … CUJ-8
+#   E2E-13 停止中はボス表現を駆動しない       … CUJ-8
 #
 # ノードは独自スクリプトのメンバーへ動的アクセスするため、型注釈を付けず Variant で扱う。
 extends GutTest
@@ -111,3 +113,26 @@ func test_start_drives_boss_presenter_to_attack() -> void:
 	_game.start(777)
 	# ProceduralPresenter は ATTACK で _pulse_speed を上げる
 	assert_gt(presenter._pulse_speed, 0.5, "開始でボスが ATTACK 表現に入る")
+
+# E2E-12 ---------------------------------------------------------------
+# game.gd の _physics_process が presenter.tick() を呼ぶ「配線」を検証する。
+# 単体テスト（test_procedural_presenter）は tick() 単体の正しさを見るが、
+# ゲームループから実際に駆動されるかは E2E でしか捕まえられない。
+func test_running_game_drives_boss_animation() -> void:
+	var presenter = _game.get_node("BossPresenterSlot")
+	_game.start(777) # ATTACK 表現に入る（_pulse_speed > 0）
+	# 開始直後・tick 前はスケール静止（既定値 1.0）
+	assert_almost_eq(presenter._mesh_instance.scale.x, 1.0, 0.0001,
+		"tick 前はボスのスケールが鼓動していない")
+	_game._physics_process(0.1) # ゲームループ 1 フレーム分
+	assert_ne(presenter._mesh_instance.scale.x, 1.0,
+		"running 中はゲームループがボスの鼓動アニメを進める")
+
+# E2E-13 ---------------------------------------------------------------
+func test_stopped_game_does_not_drive_boss_animation() -> void:
+	var presenter = _game.get_node("BossPresenterSlot")
+	_game.start(777)
+	_game._running = false # 停止状態
+	_game._physics_process(0.1)
+	assert_almost_eq(presenter._mesh_instance.scale.x, 1.0, 0.0001,
+		"停止中はゲームループがボス表現を進めない")
