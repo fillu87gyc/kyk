@@ -32,10 +32,11 @@ func start(seed_val: int = 0) -> void:
 	_update_hud()
 	_presenter.on_state_changed("ATTACK")
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not _running:
 		return
 	_bullet_manager.check_collisions(_player.global_position)
+	_presenter.tick(delta)
 
 func _on_bullet_hit(_pos: Vector3) -> void:
 	_player.take_hit()
