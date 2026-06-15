@@ -6,6 +6,8 @@ var _sphere: SphereMesh
 var _material: StandardMaterial3D
 var _time := 0.0
 var _pulse_speed := 1.0
+var _bob_time := 0.0
+const _BASE_Y := 1.5
 
 func _ready() -> void:
 	_sphere = SphereMesh.new()
@@ -44,8 +46,10 @@ func on_spell_declared(_spell_name: String) -> void:
 
 func tick(delta: float) -> void:
 	_time += delta * _pulse_speed
+	_bob_time += delta
 	var s := 1.0 + sin(_time) * 0.1
 	_mesh_instance.scale = Vector3(s, s, s)
+	position.y = _BASE_Y + sin(_bob_time * 0.7) * 0.5
 
 func is_valid() -> bool:
 	return true

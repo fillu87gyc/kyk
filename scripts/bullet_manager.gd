@@ -49,10 +49,16 @@ func _physics_process(delta: float) -> void:
 func _wave_interval() -> float:
 	return max(0.4, 2.0 - _wave_index * 0.1)
 
+func _get_boss_pos() -> Vector3:
+	var parent := get_parent()
+	if parent and parent.has_node("BossPresenterSlot"):
+		return parent.get_node("BossPresenterSlot").global_position
+	return Vector3(0.0, 1.5, -4.0)
+
 func _spawn_wave() -> void:
-	var boss_pos := Vector3(0.0, 0.0, -4.0)
+	var boss_pos := _get_boss_pos()
 	var new_bullets: Array
-	match _wave_index % 3:
+	match _wave_index % 6:
 		0:
 			new_bullets = BulletLogic.spawn_ring(boss_pos, 16, 3.0, _rng)
 		1:
@@ -60,6 +66,12 @@ func _spawn_wave() -> void:
 			new_bullets = BulletLogic.spawn_aimed(boss_pos, player_pos, 5, 0.3, 4.0)
 		2:
 			new_bullets = BulletLogic.spawn_ring(boss_pos, 8, 5.0, _rng)
+		3:
+			new_bullets = BulletLogic.spawn_ring_3d(boss_pos, 20, 3.5, _rng)
+		4:
+			new_bullets = BulletLogic.spawn_helix(boss_pos, 3, 2.5, 3.5)
+		5:
+			new_bullets = BulletLogic.spawn_dive(boss_pos, 14, 5.0, 4.0, 5.0, _rng)
 	_wave_index += 1
 
 	for b in new_bullets:

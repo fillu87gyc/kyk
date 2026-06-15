@@ -10,6 +10,7 @@ var _running := false
 @onready var _player: CharacterBody3D = $Player
 @onready var _bullet_manager: Node3D = $BulletManager
 @onready var _presenter: BossPresenter = $BossPresenterSlot
+@onready var _camera: Camera3D = $Camera3D
 @onready var _score_label: Label = $HUD/ScoreLabel
 @onready var _lives_label: Label = $HUD/LivesLabel
 @onready var _graze_label: Label = $HUD/GrazeLabel
@@ -37,6 +38,8 @@ func _physics_process(delta: float) -> void:
 		return
 	_bullet_manager.check_collisions(_player.global_position)
 	_presenter.tick(delta)
+	var target_cam_x := _player.global_position.x * 0.2
+	_camera.position.x = lerp(_camera.position.x, target_cam_x, delta * 2.5)
 
 func _on_bullet_hit(_pos: Vector3) -> void:
 	_player.take_hit()
