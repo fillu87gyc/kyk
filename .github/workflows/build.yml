@@ -1,0 +1,65 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  export-linux:
+    name: Export Linux (Steam Deck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot 4
+        run: |
+          GODOT_VERSION="4.2.2"
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo mv /tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+
+      - name: Install export templates
+        run: |
+          GODOT_VERSION="4.2.2"
+          TEMPLATES_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$TEMPLATES_DIR"
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -O /tmp/templates.tpz
+          unzip -q /tmp/templates.tpz -d /tmp/templates
+          cp /tmp/templates/templates/linux_debug.x86_64   "$TEMPLATES_DIR/"
+          cp /tmp/templates/templates/linux_release.x86_64 "$TEMPLATES_DIR/"
+
+      - name: Export Linux binary
+        run: |
+          mkdir -p build
+          godot --headless --export-release "Linux (Steam Deck)" build/kouya-kou.x86_64
+          chmod +x build/kouya-kou.x86_64
+
+      - name: Create archive
+        run: |
+          cp README.md build/
+          cd build && tar czf kouya-kou-linux-x86_64.tar.gz kouya-kou.x86_64 README.md
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kouya-kou-linux
+          path: build/kouya-kou-linux-x86_64.tar.gz
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          files: build/kouya-kou-linux-x86_64.tar.gz
+          body: |
+            ## Steam Deck でのインストール方法
+
+            ```bash
+            mkdir -p ~/games/kouya-kou && cd ~/games/kouya-kou
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/kouya-kou-linux-x86_64.tar.gz | tar xz
+            ./kouya-kou.x86_64
+            ```

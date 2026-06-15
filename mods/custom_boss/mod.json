@@ -1,0 +1,13 @@
+{
+  "name": "custom_boss",
+  "target": "boss",
+  "presenter": "presenter.gd",
+  "model": "model.glb",
+  "state_map": {
+    "IDLE":     "idle",
+    "ATTACK":   "attack",
+    "SPELL":    "spell",
+    "DEFEATED": "defeat"
+  },
+  "hit_radius_override": 0.8
+}

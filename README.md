@@ -2,6 +2,26 @@
 
 3D弾幕シューティングゲーム — Godot 4 / Steam Deck
 
+[![Build & Release](https://github.com/fillu87gyc/kyk/actions/workflows/build.yml/badge.svg)](https://github.com/fillu87gyc/kyk/actions/workflows/build.yml)
+
+## Steam Deck でプレイする
+
+デスクトップモードの Konsole で以下を実行するだけ：
+
+```bash
+mkdir -p ~/games/kouya-kou && cd ~/games/kouya-kou
+curl -L https://github.com/fillu87gyc/kyk/releases/latest/download/kouya-kou-linux-x86_64.tar.gz | tar xz
+./kouya-kou.x86_64
+```
+
+### ゲームモードに登録する（任意）
+
+1. デスクトップモードで Steam を開く
+2. **「ゲームを追加」→「非Steamゲームを追加」**
+3. `~/games/kouya-kou/kouya-kou.x86_64` を選択
+
+---
+
 ## コンセプト
 
 「自機が小さく、弾の隙間を高速で潜れる」手触りを3Dで実現する弾幕STG。
@@ -18,20 +38,61 @@
 | 言語 | GDScript（必要に応じてGDExtension/C++） |
 | 弾幕レンダリング | MultiMeshInstance3D → RenderingServer |
 | 自動テスト | GUT + `godot --headless` |
+| CI | GitHub Actions（tag push で自動ビルド＆Releases 配布） |
 | ターゲット | Steam Deck（Linux / x86_64） |
 | ライセンス | MIT |
+
+## CI / リリースフロー
+
+```
+git tag v0.1.0 && git push origin v0.1.0
+        │
+        ▼
+GitHub Actions (.github/workflows/build.yml)
+  1. Godot 4 headless インストール
+  2. Linux x86_64 バイナリをエクスポート
+  3. kouya-kou-linux-x86_64.tar.gz を GitHub Releases にアップロード
+        │
+        ▼
+Steam Deck: curl でダウンロード → 即プレイ
+```
+
+`workflow_dispatch` で Actions タブから手動ビルドも可能。
+
+## 開発者セットアップ
+
+```bash
+# 1. Godot 4 のインストール
+#    https://godotengine.org/download/linux/
+
+# 2. GUT のインストール（テスト用）
+#    Godot Asset Library → "GUT" を検索してインストール
+
+# 3. headless テスト実行
+godot --headless --script addons/gut/gut_cmdln.gd \
+  -gconfig=res://tests/gut_config.json
+
+# 4. ローカルでエクスポート＆転送
+./deploy.sh                          # エクスポートのみ
+DECK_HOST=192.168.1.XX ./deploy.sh   # Steam Deck に SCP 転送
+DECK_HOST=192.168.1.XX DECK_RUN=1 ./deploy.sh  # 転送＋実機起動
+```
 
 ## アーキテクチャ
 
 ### ロジック層（headless VMで自動テスト可能）
 
-- 弾の位置計算・速度更新
-- 喰らい判定・グレイズ判定
-- ボスステートマシン
-- スコア・パワー・残機の計算
-- 弾幕DSLのパース
+`core/` 以下。SceneTree に一切依存しない純粋ロジック：
+
+- `player_logic.gd` — 移動速度・境界・当たり/グレイズ判定
+- `bullet_logic.gd` — 弾の step・ring/aimed スポーン（seed 固定・決定論）
+- `boss_presenter.gd` — BossPresenter インターフェース定義
+- `procedural_presenter.gd` — デフォルト幾何学ボス
+- `mod_loader.gd` — mods/ スキャン → Presenter 選択 → フォールバック
 
 ### 描画/手触り層（Steam Deck実機で確認）
+
+`scripts/` 以下。シーンツリーに接続するノードスクリプト：
 
 - MultiMeshInstance3D への transform 転送
 - カメラ・FOV・追従
@@ -58,22 +119,6 @@ res://mods/custom_boss/
 
 MODの作り方は [mods/README.md](mods/README.md) を参照。
 サンプル実装は [sdk/sample_presenter.gd](sdk/sample_presenter.gd) を参照（MIT）。
-
-## セットアップ
-
-```bash
-# Godot 4 のインストール（headless版）
-# https://godotengine.org/download/linux/
-
-# GUT のインストール
-# Godot Asset Library から "Gut" を検索してインストール
-
-# テスト実行
-godot --headless --script addons/gut/gut_cmdln.gd
-
-# Steam Deck 向けエクスポート
-./deploy.sh
-```
 
 ## 開発ロードマップ
 
