@@ -37,27 +37,33 @@ curl -L https://github.com/fillu87gyc/kyk/releases/latest/download/kouya-kou-lin
 | エンジン | Godot 4 |
 | 言語 | GDScript（必要に応じてGDExtension/C++） |
 | 弾幕レンダリング | MultiMeshInstance3D → RenderingServer |
-| 自動テスト | GUT + `godot --headless` |
-| CI | GitHub Actions（tag push で自動ビルド＆Releases 配布） |
+| 自動テスト | GUT + `godot --headless`（単体64＋E2E11＝計75本／[TESTING.md](TESTING.md)）|
+| CI | GitHub Actions（テスト緑をゲートに自動ビルド＆Releases 配布） |
 | ターゲット | Steam Deck（Linux / x86_64） |
 | ライセンス | MIT |
 
 ## CI / リリースフロー
 
+バージョンアップは **自動テストの通過がゲート**。テストが赤ならビルドもリリースもされない。
+
 ```
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.1.0 && git push origin v0.1.0   （または main への push / PR）
         │
         ▼
 GitHub Actions (.github/workflows/build.yml)
-  1. Godot 4 headless インストール
-  2. Linux x86_64 バイナリをエクスポート
-  3. kouya-kou-linux-x86_64.tar.gz を GitHub Releases にアップロード
+  job: test          GUT headless で全テスト（75本）  ← 赤なら即停止
+        │ needs: test（かつ PR 以外）
+        ▼
+  job: export-linux  Linux x86_64 をエクスポート → Releases にアップロード
         │
         ▼
 Steam Deck: curl でダウンロード → 即プレイ
 ```
 
-`workflow_dispatch` で Actions タブから手動ビルドも可能。
+PR でも `test` ジョブが走るため、マージ前に赤に気づける。
+`workflow_dispatch` で Actions タブから手動実行も可能。
+
+テストの中身・CUJ・カバレッジ集計は [TESTING.md](TESTING.md) を参照。
 
 ## 開発者セットアップ
 

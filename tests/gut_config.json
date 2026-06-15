@@ -7,5 +7,7 @@
   "should_maximize": false,
   "compact_mode": false,
   "background_color": "black",
-  "font_color": "white"
+  "font_color": "white",
+  "should_exit": true,
+  "should_exit_on_success": true
 }

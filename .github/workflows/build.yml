@@ -1,32 +1,83 @@
-name: Build & Release
+name: CI — Test → Build → Release
 
+# バージョンアップ（main への push / タグ）は必ず自動テストを通過した場合のみ
+# ビルド・リリースされる。PR でもテストが走り、緑でなければマージ前に気づける。
 on:
   push:
     branches:
       - main
     tags:
       - "v*"
+  pull_request:
   workflow_dispatch:
 
+env:
+  GODOT_VERSION: "4.2.2"
+  GUT_VERSION: "9.3.0"
+
 jobs:
+  # ---------------------------------------------------------------------------
+  # 1) 自動テスト（GUT headless）— これが緑でなければ以降は一切走らない
+  # ---------------------------------------------------------------------------
+  test:
+    name: Automated Tests (GUT headless)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot 4 (headless)
+        run: |
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          sudo mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+          godot --version
+
+      - name: Install GUT (test framework)
+        run: |
+          # GUT はリポジトリに同梱しない（.gitignore 済み）。CI で固定版を取得する。
+          wget -q "https://github.com/bitwes/Gut/archive/refs/tags/v${GUT_VERSION}.zip" -O /tmp/gut.zip
+          unzip -q /tmp/gut.zip -d /tmp/gut
+          mkdir -p addons/gut
+          cp -r "/tmp/gut/Gut-${GUT_VERSION}/addons/gut/." addons/gut/
+          test -f addons/gut/gut_cmdln.gd
+
+      - name: Import project (class_name キャッシュ生成)
+        run: |
+          # 初回 import で global class（PlayerLogic 等）の解決キャッシュを作る。
+          godot --headless --import 2>&1 | tail -n 40 || true
+
+      - name: Run GUT tests
+        run: |
+          set -o pipefail
+          godot --headless \
+            -s res://addons/gut/gut_cmdln.gd \
+            -gconfig=res://tests/gut_config.json \
+            2>&1 | tee gut_output.log
+          # gut_config.json の should_exit_on_success=true により、
+          # 失敗があれば godot は非ゼロ終了し、このジョブが赤になる。
+
+  # ---------------------------------------------------------------------------
+  # 2) Linux バイナリのエクスポート＆配布（テスト通過後・PR では走らない）
+  # ---------------------------------------------------------------------------
   export-linux:
     name: Export Linux (Steam Deck)
     runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name != 'pull_request'
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Godot 4
         run: |
-          GODOT_VERSION="4.2.2"
           wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O /tmp/godot.zip
           unzip -q /tmp/godot.zip -d /tmp/godot
-          sudo mv /tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 /usr/local/bin/godot
+          sudo mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
           sudo chmod +x /usr/local/bin/godot
 
       - name: Install export templates
         run: |
-          GODOT_VERSION="4.2.2"
           TEMPLATES_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           mkdir -p "$TEMPLATES_DIR"
           wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -O /tmp/templates.tpz
@@ -62,7 +113,7 @@ jobs:
           removeArtifacts: true
           artifacts: "build/kouya-kou-linux-x86_64.tar.gz"
           body: |
-            mainブランチの最新ビルドです。pushのたびに自動更新されます。
+            mainブランチの最新ビルドです。pushのたびに自動テスト通過後に自動更新されます。
 
             **コミット:** ${{ github.sha }}
             **更新日時:** ${{ github.event.head_commit.timestamp }}
