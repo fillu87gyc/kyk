@@ -19,6 +19,12 @@
 #   E2E-16 自機 Presenter が被弾でフラッシュする … CUJ-5, CUJ-8
 #   E2E-17 デバッグトグルで喰らい/グレイズ判定が見える … CUJ-5, CUJ-6
 #   E2E-18 ブーストでカメラが引きFOVが開く        … CUJ-3
+#   E2E-19 自機弾がボスに当たりHPが減る            … CUJ-11
+#   E2E-20 ボス撃破でステージクリア信号が出る       … CUJ-11
+#   E2E-21 被弾でヒットストップが発生する          … CUJ-5
+#   E2E-22 グレイズでパワー表示が増える            … CUJ-12
+#   E2E-25 ボムで周囲の弾が消え残機は減らない       … CUJ-16
+#   E2E-26 被弾・グレイズ・ボス撃破でパーティクルが発生する … CUJ-15
 #
 # ノードは独自スクリプトのメンバーへ動的アクセスするため、型注釈を付けず Variant で扱う。
 extends GutTest
@@ -192,3 +198,80 @@ func test_boost_widens_fov_and_pulls_camera_back() -> void:
 	p.is_boosting = true
 	_game._physics_process(0.5)
 	assert_gt(camera.fov, normal_fov, "ブースト中はFOVが広がる")
+
+# E2E-19 ---------------------------------------------------------------
+func test_player_bullet_hits_boss_and_reduces_hp() -> void:
+	_game.start(777)
+	var bm = _bullets()
+	var presenter = _game.get_node("BossPresenterSlot")
+	var hp_before: float = _game._boss_state.hp
+	bm._player_bullets = [BulletLogic.BulletState.new(presenter.global_position, Vector3.ZERO)]
+	watch_signals(bm)
+	bm.check_boss_collisions(presenter.global_position, _presenter_hit_radius(presenter))
+	assert_signal_emitted(bm, "bullet_hit_boss", "自機弾がボスに当たるとヒット信号が出る")
+	assert_lt(_game._boss_state.hp, hp_before, "ボスHPが減る")
+
+func _presenter_hit_radius(presenter):
+	return presenter.get_hit_radius(_game.BOSS_HIT_RADIUS)
+
+# E2E-20 ---------------------------------------------------------------
+func test_boss_defeat_emits_stage_clear() -> void:
+	_game.start(777)
+	watch_signals(_game)
+	_game._boss_state.take_damage(BossStateMachine.MAX_HP)
+	assert_signal_emitted(_game, "stage_clear", "ボスのHPが0になるとステージクリア信号が出る")
+	assert_false(_game._running, "ステージクリアで running=false")
+
+# E2E-21 ---------------------------------------------------------------
+func test_bullet_hit_triggers_hit_stop() -> void:
+	_game.start(777)
+	var bm = _bullets()
+	var p = _player()
+	p.global_position = Vector3.ZERO
+	bm._bullets = [BulletLogic.BulletState.new(Vector3.ZERO, Vector3.ZERO)]
+	bm.check_collisions(p.global_position)
+	assert_true(_game._hit_stop.is_active(), "被弾でヒットストップが有効になる")
+	_game._physics_process(0.001)
+	assert_lt(Engine.time_scale, 1.0, "ヒットストップ中は time_scale が下がる")
+	Engine.time_scale = 1.0
+
+# E2E-22 ---------------------------------------------------------------
+func test_graze_increases_power_label() -> void:
+	_game.start(777)
+	var bm = _bullets()
+	var p = _player()
+	p.global_position = Vector3.ZERO
+	var graze_d := (PlayerLogic.HIT_RADIUS + PlayerLogic.GRAZE_RADIUS) * 0.5
+	for i in WeaponLogic.GRAZE_PER_POWER:
+		bm._bullets = [BulletLogic.BulletState.new(Vector3(0, 0, graze_d), Vector3.ZERO)]
+		bm.check_collisions(p.global_position)
+	var power_label = _game.get_node("HUD/PowerLabel")
+	assert_eq(power_label.text, "POWER: 1", "グレイズが貯まるとパワー表示が増える")
+
+# E2E-25 ---------------------------------------------------------------
+func test_bomb_clears_nearby_bullets_without_losing_life() -> void:
+	_game.start(777)
+	var bm = _bullets()
+	var p = _player()
+	p.global_position = Vector3.ZERO
+	bm._bullets = [BulletLogic.BulletState.new(Vector3(1, 0, 1), Vector3.ZERO)]
+	var bombs_before: int = p.bombs
+	var lives_before: int = p.lives
+	_game._try_use_bomb()
+	assert_eq(p.bombs, bombs_before - 1, "ボム使用でボム数が1減る")
+	assert_eq(p.lives, lives_before, "ボム使用で残機は減らない")
+	assert_false(bm._bullets[0].active, "ボムの範囲内の弾が消える")
+
+# E2E-26 ---------------------------------------------------------------
+func test_hit_and_graze_and_defeat_trigger_particles() -> void:
+	_game.start(777)
+	_game._on_bullet_hit(Vector3(1, 0, 2))
+	assert_true(_game._hit_particles.emitting, "被弾でヒットパーティクルが発生する")
+	assert_eq(_game._hit_particles.global_position, Vector3(1, 0, 2),
+		"パーティクルが被弾位置に出る")
+
+	_game._on_bullet_graze(Vector3(3, 0, 4))
+	assert_true(_game._graze_particles.emitting, "グレイズでグレイズパーティクルが発生する")
+
+	_game._boss_state.take_damage(BossStateMachine.MAX_HP)
+	assert_true(_game._defeat_particles.emitting, "ボス撃破で撃破パーティクルが発生する")

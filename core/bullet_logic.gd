@@ -91,6 +91,26 @@ static func spawn_helix(
 			out.append(BulletState.new(center, vel))
 	return out
 
+# Spiral: `arms` evenly-spaced blades, each subdivided into `density` bullets.
+# Advancing base_angle across successive calls makes the blades appear to rotate.
+static func spawn_spiral(
+	center: Vector3,
+	arms: int,
+	density: int,
+	speed: float,
+	base_angle: float
+) -> Array:
+	var out: Array = []
+	var arm_span := TAU / arms
+	for arm in arms:
+		var arm_angle := base_angle + arm_span * arm
+		for i in density:
+			var t := float(i) / float(density)
+			var angle := arm_angle + t * arm_span
+			var vel := Vector3(cos(angle), 0.0, sin(angle)) * speed
+			out.append(BulletState.new(center, vel))
+	return out
+
 # Dive: spawn above the playfield and fall toward Y=0
 static func spawn_dive(
 	center: Vector3,

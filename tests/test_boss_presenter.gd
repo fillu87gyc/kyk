@@ -39,3 +39,16 @@ func test_sample_humanoid_is_a_boss_presenter() -> void:
 	var p := SampleHumanoidPresenter.new()
 	assert_is(p, BossPresenter, "SampleHumanoidPresenter は BossPresenter の派生")
 	p.free()
+
+func test_hit_radius_override_unset_uses_default() -> void:
+	var p := BossPresenter.new()
+	assert_almost_eq(p.get_hit_radius(1.2), 1.2, 0.0001,
+		"未設定(-1.0)のときは呼び出し側のデフォルト半径を使う")
+	p.free()
+
+func test_hit_radius_override_set_takes_precedence() -> void:
+	var p := BossPresenter.new()
+	p.hit_radius_override = 0.8
+	assert_almost_eq(p.get_hit_radius(1.2), 0.8, 0.0001,
+		"mod.json の hit_radius_override が指定されていればそれを使う")
+	p.free()

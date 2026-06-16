@@ -5,6 +5,7 @@ signal graze_triggered
 
 var lives := 3
 var graze := 0
+var bombs := 0
 var is_boosting := false
 var _invincible := false
 var _invincible_timer := 0.0
@@ -56,6 +57,16 @@ func add_graze() -> void:
 	graze += 1
 	_presenter.on_graze()
 	emit_signal("graze_triggered")
+
+func use_bomb() -> bool:
+	if bombs <= 0:
+		return false
+	bombs -= 1
+	_invincible = true
+	_invincible_timer = INVINCIBLE_DURATION
+	_presenter.on_hit_flash(true)
+	_update_hitbox_visual()
+	return true
 
 func toggle_debug_hitbox() -> void:
 	_debug_hitbox_visible = not _debug_hitbox_visible

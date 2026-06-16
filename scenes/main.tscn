@@ -61,6 +61,36 @@ theme_override_font_sizes/font_size = 28
 horizontal_alignment = 1
 text = "Aボタン / Enter でスタート"
 
+[node name="DifficultyLabel" type="Label" parent="TitleScreen"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 95.0
+offset_right = 200.0
+offset_bottom = 125.0
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+modulate = Color(0.7, 0.85, 1, 1)
+text = "難易度: NORMAL"
+
+[node name="HighScoreLabel" type="Label" parent="TitleScreen"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 130.0
+offset_right = 200.0
+offset_bottom = 160.0
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+modulate = Color(1, 0.85, 0.4, 1)
+text = "HIGH SCORE: 0"
+
 [node name="GameOverLabel" type="Label" parent="TitleScreen"]
 anchors_preset = 8
 anchor_left = 0.5
