@@ -7,6 +7,8 @@ var lives := 3
 var graze := 0
 var bombs := 0
 var is_boosting := false
+var _dash := DashController.new()
+var _dash_velocity := Vector3.ZERO
 var _invincible := false
 var _invincible_timer := 0.0
 var _debug_hitbox_visible := false
@@ -37,8 +39,16 @@ func _physics_process(delta: float) -> void:
 	if focused != _was_focused:
 		_presenter.on_focus_changed(focused)
 		_was_focused = focused
-	var target_velocity := PlayerLogic.calc_velocity(raw, focused, delta, is_boosting)
-	velocity = PlayerLogic.apply_inertia(velocity, target_velocity, delta)
+
+	_dash.update(delta)
+	if Input.is_action_just_pressed("dash"):
+		trigger_dash(raw)
+
+	if _dash.is_active():
+		velocity = _dash_velocity
+	else:
+		var target_velocity := PlayerLogic.calc_velocity(raw, focused, delta, is_boosting)
+		velocity = PlayerLogic.apply_inertia(velocity, target_velocity, delta)
 	move_and_slide()
 	position = PlayerLogic.clamp_position(position)
 	_presenter.tick(delta)
@@ -58,6 +68,23 @@ func add_graze() -> void:
 	graze += 1
 	_presenter.on_graze()
 	emit_signal("graze_triggered")
+
+func trigger_dash(direction: Vector2 = Vector2.ZERO) -> bool:
+	if not _dash.trigger():
+		return false
+	_dash_velocity = Vector3.ZERO
+	if direction.length() > 0.0:
+		_dash_velocity = Vector3(direction.x, 0.0, direction.y).normalized() * DashController.DASH_SPEED
+	_invincible = true
+	_invincible_timer = max(_invincible_timer, DashController.DASH_DURATION)
+	_update_hitbox_visual()
+	return true
+
+func is_dashing() -> bool:
+	return _dash.is_active()
+
+func can_dash() -> bool:
+	return _dash.can_dash()
 
 func use_bomb() -> bool:
 	if bombs <= 0:

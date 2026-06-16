@@ -35,6 +35,7 @@ var _defeat_particles: GPUParticles3D
 @onready var _graze_label: Label = $HUD/GrazeLabel
 @onready var _power_label: Label = $HUD/PowerLabel
 @onready var _bombs_label: Label = $HUD/BombsLabel
+@onready var _dash_label: Label = $HUD/DashLabel
 @onready var _boss_hp_label: Label = $HUD/BossHpLabel
 @onready var _spell_label: Label = $HUD/SpellLabel
 
@@ -95,6 +96,7 @@ func _physics_process(delta: float) -> void:
 		_presenter.global_position, _presenter.get_hit_radius(BOSS_HIT_RADIUS))
 	_presenter.tick(delta)
 	_update_camera(delta)
+	_update_dash_hud()
 
 func _try_use_bomb() -> void:
 	if _player.use_bomb():
@@ -167,3 +169,12 @@ func _update_hud() -> void:
 	_graze_label.text = "GRAZE: %d" % _player.graze
 	_power_label.text = "POWER: %d" % WeaponLogic.power_from_graze(_player.graze)
 	_bombs_label.text = "BOMB: %d" % _player.bombs
+	_update_dash_hud()
+
+func _update_dash_hud() -> void:
+	if _player.is_dashing():
+		_dash_label.text = "DASH: ACTIVE"
+	elif _player.can_dash():
+		_dash_label.text = "DASH: READY"
+	else:
+		_dash_label.text = "DASH: COOLDOWN"

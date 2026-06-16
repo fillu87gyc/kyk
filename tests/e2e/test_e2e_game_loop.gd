@@ -25,6 +25,8 @@
 #   E2E-22 グレイズでパワー表示が増える            … CUJ-12
 #   E2E-25 ボムで周囲の弾が消え残機は減らない       … CUJ-16
 #   E2E-26 被弾・グレイズ・ボス撃破でパーティクルが発生する … CUJ-15
+#   E2E-27 緊急ダッシュで無敵になり連続発動できない        … CUJ-17
+#   E2E-28 ダッシュ表示がHUDに反映される                  … CUJ-17
 #
 # ノードは独自スクリプトのメンバーへ動的アクセスするため、型注釈を付けず Variant で扱う。
 extends GutTest
@@ -275,3 +277,31 @@ func test_hit_and_graze_and_defeat_trigger_particles() -> void:
 
 	_game._boss_state.take_damage(BossStateMachine.MAX_HP)
 	assert_true(_game._defeat_particles.emitting, "ボス撃破で撃破パーティクルが発生する")
+
+# E2E-27 ---------------------------------------------------------------
+func test_dash_grants_invincibility_and_blocks_immediate_retrigger() -> void:
+	_game.start(777)
+	var p = _player()
+	assert_false(p.is_dashing(), "開始直後はダッシュ中ではない")
+	var triggered: bool = p.trigger_dash(Vector2(1, 0))
+	assert_true(triggered, "通常状態からはダッシュが発動できる")
+	assert_true(p.is_dashing(), "発動直後はダッシュ中になる")
+	var hit_before: int = p.lives
+	p.take_hit() # ダッシュの無敵中なので無視されるはず
+	assert_eq(p.lives, hit_before, "ダッシュ中の無敵で被弾が無効になる")
+	var retriggered: bool = p.trigger_dash(Vector2(1, 0))
+	assert_false(retriggered, "発動中・クールダウン中の再発動は失敗する")
+
+# E2E-28 ---------------------------------------------------------------
+func test_dash_label_reflects_dash_state() -> void:
+	_game.start(777)
+	var p = _player()
+	var dash_label = _game.get_node("HUD/DashLabel")
+	_game._update_dash_hud()
+	assert_eq(dash_label.text, "DASH: READY", "開始直後はダッシュ可能表示")
+	p.trigger_dash(Vector2(1, 0))
+	_game._update_dash_hud()
+	assert_eq(dash_label.text, "DASH: ACTIVE", "発動中はACTIVE表示")
+	p._physics_process(DashController.DASH_DURATION + 0.01) # 発動終了、クールダウン中
+	_game._update_dash_hud()
+	assert_eq(dash_label.text, "DASH: COOLDOWN", "発動終了直後はCOOLDOWN表示")

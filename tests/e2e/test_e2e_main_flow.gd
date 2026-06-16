@@ -8,7 +8,7 @@
 #   E2E-11  ゲームオーバーでタイトルへ復帰   … CUJ-7
 #   E2E-23  ステージクリアでタイトルへ復帰   … CUJ-11
 #   E2E-24  難易度選択がゲーム開始に反映される … CUJ-13
-#   E2E-27  新記録をハイスコアとして保存する     … CUJ-14
+#   E2E-29  新記録をハイスコアとして保存する     … CUJ-14
 #
 # ノードは独自スクリプトのメンバーへ動的アクセスするため、型注釈を付けず Variant で扱う。
 extends GutTest
@@ -78,7 +78,7 @@ func test_difficulty_selection_is_applied_on_start() -> void:
 	assert_eq(player.lives, Difficulty.get_preset(Difficulty.Level.HARD).lives,
 		"選択した難易度の残機がゲーム開始に反映される")
 
-# E2E-27 ---------------------------------------------------------------
+# E2E-29 ---------------------------------------------------------------
 func test_new_high_score_is_saved_and_shown_on_title() -> void:
 	assert_eq(_main._high_score, 0, "保存ファイルが無い起動直後はハイスコア0")
 	_main._start_game()
