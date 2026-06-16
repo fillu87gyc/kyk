@@ -37,7 +37,8 @@ func _physics_process(delta: float) -> void:
 	if focused != _was_focused:
 		_presenter.on_focus_changed(focused)
 		_was_focused = focused
-	velocity = PlayerLogic.calc_velocity(raw, focused, delta, is_boosting)
+	var target_velocity := PlayerLogic.calc_velocity(raw, focused, delta, is_boosting)
+	velocity = PlayerLogic.apply_inertia(velocity, target_velocity, delta)
 	move_and_slide()
 	position = PlayerLogic.clamp_position(position)
 	_presenter.tick(delta)

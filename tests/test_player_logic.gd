@@ -67,6 +67,37 @@ func test_default_is_boosting_false() -> void:
 	assert_almost_eq(vel.length(), PlayerLogic.NORMAL_SPEED, 0.001,
 		"is_boosting 省略時は通常速度のまま")
 
+# --- apply_inertia（慣性・減速） --------------------------------------------
+# NOTE: ACCELERATION/DECELERATION は仮値。Layer B（Steam Deck実機）での
+# 主観確認を経て調整される前提の暫定パラメータ。ここでは数値遷移の決定論のみ検証する。
+
+func test_apply_inertia_does_not_jump_instantly_to_target() -> void:
+	var result := PlayerLogic.apply_inertia(Vector3.ZERO, Vector3(8, 0, 0), 0.016)
+	assert_gt(result.x, 0.0, "目標方向へ加速し始める")
+	assert_lt(result.x, 8.0, "1フレームでは目標速度に到達しない（瞬時切替ではない）")
+
+func test_apply_inertia_reaches_target_eventually() -> void:
+	var v := Vector3.ZERO
+	var target := Vector3(8, 0, 0)
+	for i in 120:
+		v = PlayerLogic.apply_inertia(v, target, 0.016)
+	assert_almost_eq(v.x, 8.0, 0.01, "十分な時間が経てば目標速度に収束する")
+
+func test_apply_inertia_decelerates_when_input_released() -> void:
+	var v := PlayerLogic.apply_inertia(Vector3(8, 0, 0), Vector3.ZERO, 0.016)
+	assert_lt(v.x, 8.0, "入力を離すと減速する")
+	assert_gt(v.x, 0.0, "1フレームでは完全停止しない")
+
+func test_apply_inertia_decelerates_faster_than_it_accelerates() -> void:
+	var accel_step: float = PlayerLogic.apply_inertia(Vector3.ZERO, Vector3(8, 0, 0), 0.1).x
+	var decel_step: float = 8.0 - PlayerLogic.apply_inertia(Vector3(8, 0, 0), Vector3.ZERO, 0.1).x
+	assert_gt(decel_step, accel_step, "減速は加速より素早い（急停止できる）")
+
+func test_apply_inertia_is_deterministic() -> void:
+	var v1 := PlayerLogic.apply_inertia(Vector3(1, 0, 0), Vector3(8, 0, 0), 0.016)
+	var v2 := PlayerLogic.apply_inertia(Vector3(1, 0, 0), Vector3(8, 0, 0), 0.016)
+	assert_eq(v1, v2, "同じ入力なら同じ結果（決定論）")
+
 # --- clamp_position -------------------------------------------------------
 
 func test_clamp_within_bounds() -> void:
