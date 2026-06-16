@@ -37,7 +37,7 @@ curl -L https://github.com/fillu87gyc/kyk/releases/latest/download/kouya-kou-lin
 | エンジン | Godot 4 |
 | 言語 | GDScript（必要に応じてGDExtension/C++） |
 | 弾幕レンダリング | MultiMeshInstance3D → RenderingServer |
-| 自動テスト | GUT + `godot --headless`（単体144＋E2E27＝計171本／[TESTING.md](TESTING.md)）|
+| 自動テスト | GUT + `godot --headless`（単体154＋E2E27＝計181本／[TESTING.md](TESTING.md)）|
 | CI | GitHub Actions（テスト緑をゲートに自動ビルド＆Releases 配布） |
 | ターゲット | Steam Deck（Linux / x86_64） |
 | ライセンス | MIT |
@@ -51,7 +51,7 @@ git tag v0.1.0 && git push origin v0.1.0   （または main への push / PR）
         │
         ▼
 GitHub Actions (.github/workflows/build.yml)
-  job: test          GUT headless で全テスト（171本）  ← 赤なら即停止
+  job: test          GUT headless で全テスト（181本）  ← 赤なら即停止
         │ needs: test（かつ PR 以外）
         ▼
   job: export-linux  Linux x86_64 をエクスポート → Releases にアップロード
@@ -91,8 +91,10 @@ DECK_HOST=192.168.1.XX DECK_RUN=1 ./deploy.sh  # 転送＋実機起動
 `core/` 以下。SceneTree に一切依存しない純粋ロジック：
 
 - `player_logic.gd` — 移動速度（ブースト含む）・境界・当たり/グレイズ判定
-- `bullet_logic.gd` — 弾の step・ring/aimed/helix/spiral/dive スポーン（seed 固定・決定論）
+- `bullet_logic.gd` — 弾の step・ring/aimed/helix/spiral/dive スポーン・奥カリング（seed 固定・決定論）
 - `bullet_dsl.gd` — 弾幕パターンの文字列DSLパーサー（`ring(count=16, ...)` 等）
+- `spatial_grid.gd` — 当たり判定のブロードフェーズ用一様格子（数万発規模での総当たり回避）
+- `score_logic.gd` — グレイズ/ボス撃破のスコア計算
 - `boss_presenter.gd` / `player_presenter.gd` — Presenter インターフェース定義（ボス/自機）
 - `procedural_presenter.gd` / `procedural_player_presenter.gd` — デフォルト幾何学表現
 - `boss_state_machine.gd` — HPしきい値によるフェーズ遷移・スペル宣言・撃破判定

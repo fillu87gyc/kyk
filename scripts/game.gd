@@ -18,7 +18,6 @@ const GRAZE_STOP_DURATION := 0.04
 const GRAZE_STOP_SCALE := 0.5
 
 var score := 0
-var _graze_score := 10
 var _running := false
 var _boss_state := BossStateMachine.new()
 var _hit_stop := HitStopController.new()
@@ -122,7 +121,7 @@ func _on_bullet_hit(pos: Vector3) -> void:
 
 func _on_bullet_graze(pos: Vector3) -> void:
 	_player.add_graze()
-	score += _graze_score
+	score += ScoreLogic.graze_score()
 	_hit_stop.trigger(GRAZE_STOP_DURATION, GRAZE_STOP_SCALE)
 	_emit_burst(_graze_particles, pos)
 	_update_hud()
@@ -156,6 +155,9 @@ func _on_player_died() -> void:
 func _on_boss_defeated() -> void:
 	_running = false
 	Engine.time_scale = 1.0
+	score += ScoreLogic.boss_defeat_score()
+	_update_hud()
+	emit_signal("score_updated", score)
 	_emit_burst(_defeat_particles, _presenter.global_position)
 	emit_signal("stage_clear", score)
 

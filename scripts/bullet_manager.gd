@@ -13,6 +13,7 @@ var _wave_timer := 0.0
 var _wave_index := 0
 var _player_fire_timer := 0.0
 var _speed_mult := 1.0
+var _grid := SpatialGrid.new(4.0)
 
 signal bullet_hit_player(bullet_pos: Vector3)
 signal bullet_grazed_player(bullet_pos: Vector3)
@@ -58,6 +59,7 @@ func _physics_process(delta: float) -> void:
 		_spawn_wave()
 
 	BulletLogic.step(_bullets, delta)
+	BulletLogic.cull_out_of_range(_bullets, Vector3.ZERO)
 	_sync_multimesh(_multimesh, _bullets)
 
 	_player_fire_timer = WeaponLogic.tick_cooldown(_player_fire_timer, delta)
@@ -132,7 +134,13 @@ func _sync_multimesh(mm: MultiMesh, bullets: Array) -> void:
 			idx += 1
 
 func check_collisions(player_pos: Vector3) -> void:
-	for b in _bullets:
+	_grid.clear()
+	for i in _bullets.size():
+		if _bullets[i].active:
+			_grid.insert(i, _bullets[i].position)
+
+	for idx in _grid.query_near(player_pos, PlayerLogic.GRAZE_RADIUS):
+		var b = _bullets[idx]
 		if not b.active:
 			continue
 		if PlayerLogic.check_hit(player_pos, b.position):

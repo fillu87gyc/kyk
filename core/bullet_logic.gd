@@ -2,6 +2,7 @@ class_name BulletLogic
 
 const MAX_BULLETS := 2000
 const LIFETIME := 8.0
+const CULL_RANGE := 60.0
 
 class BulletState:
 	var position: Vector3
@@ -22,6 +23,14 @@ static func step(bullets: Array, delta: float) -> void:
 		b.position += b.velocity * delta
 		b.age += delta
 		if b.age > LIFETIME:
+			b.active = false
+
+# 奥カリング: プレイフィールドから大きく外れた弾を非アクティブ化する。
+# 数万発規模になると毎フレームの当たり判定・描画コストが効くため、
+# 寿命切れを待たず早期に弾数を絞る。
+static func cull_out_of_range(bullets: Array, center: Vector3, max_range: float = CULL_RANGE) -> void:
+	for b in bullets:
+		if b.active and b.position.distance_to(center) > max_range:
 			b.active = false
 
 static func spawn_ring(
