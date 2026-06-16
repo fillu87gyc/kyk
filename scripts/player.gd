@@ -11,6 +11,9 @@ const INVINCIBLE_DURATION := 2.0
 
 @onready var _hitbox_visual: MeshInstance3D = $HitboxVisual
 
+func _ready() -> void:
+	add_to_group("player")
+
 func _physics_process(delta: float) -> void:
 	if _invincible:
 		_invincible_timer -= delta

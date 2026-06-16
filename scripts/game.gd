@@ -3,6 +3,10 @@ extends Node3D
 signal game_over(score: int)
 signal score_updated(score: int)
 
+const CAM_OFFSET := Vector3(0.0, 4.0, 7.0)
+const CAM_LOOK_AHEAD := 9.0
+const CAM_FOLLOW_LERP := 5.0
+
 var score := 0
 var _graze_score := 10
 var _running := false
@@ -11,6 +15,7 @@ var _running := false
 @onready var _bullet_manager: Node3D = $BulletManager
 @onready var _presenter: BossPresenter = $BossPresenterSlot
 @onready var _camera: Camera3D = $Camera3D
+@onready var _light: DirectionalLight3D = $DirectionalLight3D
 @onready var _score_label: Label = $HUD/ScoreLabel
 @onready var _lives_label: Label = $HUD/LivesLabel
 @onready var _graze_label: Label = $HUD/GrazeLabel
@@ -20,7 +25,22 @@ func _ready() -> void:
 	_player.graze_triggered.connect(_on_graze)
 	_bullet_manager.bullet_hit_player.connect(_on_bullet_hit)
 	_bullet_manager.bullet_grazed_player.connect(_on_bullet_graze)
+	_setup_world()
 	_update_hud()
+
+func _setup_world() -> void:
+	_light.shadow_enabled = true
+
+	var ground := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(60.0, 60.0)
+	var ground_mat := StandardMaterial3D.new()
+	ground_mat.albedo_color = Color(0.05, 0.03, 0.09)
+	ground_mat.roughness = 0.85
+	plane.material = ground_mat
+	ground.mesh = plane
+	ground.position = Vector3(0.0, -0.2, 3.0)
+	add_child(ground)
 
 func start(seed_val: int = 0) -> void:
 	_running = true
@@ -38,8 +58,16 @@ func _physics_process(delta: float) -> void:
 		return
 	_bullet_manager.check_collisions(_player.global_position)
 	_presenter.tick(delta)
-	var target_cam_x := _player.global_position.x * 0.2
-	_camera.position.x = lerp(_camera.position.x, target_cam_x, delta * 2.5)
+	_update_camera(delta)
+
+func _update_camera(delta: float) -> void:
+	var player_pos := _player.global_position
+	var target_pos := player_pos + CAM_OFFSET
+	_camera.global_position = _camera.global_position.lerp(
+		target_pos, delta * CAM_FOLLOW_LERP)
+	var look_target := Vector3(
+		player_pos.x, player_pos.y + 0.5, player_pos.z - CAM_LOOK_AHEAD)
+	_camera.look_at(look_target, Vector3.UP)
 
 func _on_bullet_hit(_pos: Vector3) -> void:
 	_player.take_hit()

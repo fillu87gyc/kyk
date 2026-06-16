@@ -48,10 +48,11 @@ environment = SubResource("Env_world")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 10)
 light_energy = 1.5
+shadow_enabled = true
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.819152, 0.573576, 0, -0.573576, 0.819152, 0, 10, 15)
-fov = 55.0
+fov = 70.0
 
 [node name="Player" type="CharacterBody3D" parent="."]
 script = ExtResource("2_player")

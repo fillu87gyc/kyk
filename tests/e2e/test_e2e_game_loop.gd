@@ -14,6 +14,8 @@
 #   E2E-8  開始でボス Presenter が ATTACK へ … CUJ-8
 #   E2E-12 ゲームループがボス表現を駆動する   … CUJ-8
 #   E2E-13 停止中はボス表現を駆動しない       … CUJ-8
+#   E2E-14 Player は player グループに属する … CUJ-3, CUJ-8
+#   E2E-15 ゲームループでボスがプレイヤーを向く … CUJ-8
 #
 # ノードは独自スクリプトのメンバーへ動的アクセスするため、型注釈を付けず Variant で扱う。
 extends GutTest
@@ -106,6 +108,23 @@ func test_wave_spawns_bullets() -> void:
 	assert_eq(bm._bullets.size(), 16, "最初のウェーブでリング 16 発が湧く")
 	bm._spawn_wave() # wave 1 → エイム 5 発
 	assert_eq(bm._bullets.size(), 21, "次のウェーブでエイム 5 発が加わる")
+
+# E2E-14 ---------------------------------------------------------------
+# プレイヤーが "player" グループに属していることを検証する。
+# このグループはエイム弾の標的取得（BulletManager._get_player_pos）と
+# ボスの向き直り（ProceduralPresenter._face_player）の両方が依存する。
+func test_player_is_in_player_group() -> void:
+	assert_true(_player().is_in_group("player"),
+		"Player ノードは player グループに属する")
+
+# E2E-15 ---------------------------------------------------------------
+func test_boss_faces_player_during_game_loop() -> void:
+	_game.start(777)
+	_player().global_position = Vector3(8.0, 0.0, 6.0)
+	_game._physics_process(0.1)
+	var presenter = _game.get_node("BossPresenterSlot")
+	var forward: Vector3 = -presenter.global_transform.basis.z
+	assert_gt(forward.x, 0.0, "プレイヤーがX+方向にいればボスもX+方向を向く")
 
 # E2E-8 ----------------------------------------------------------------
 func test_start_drives_boss_presenter_to_attack() -> void:
