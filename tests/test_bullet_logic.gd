@@ -148,6 +148,22 @@ func test_determinism_same_seed() -> void:
 		assert_almost_eq(b1[i].velocity.x, b2[i].velocity.x, 0.0001,
 			"同一シードは同一結果を生む")
 
+# --- cull_out_of_range（奥カリング） ---------------------------------------
+
+func test_cull_out_of_range_deactivates_far_bullets() -> void:
+	var near_b = BulletLogic.BulletState.new(Vector3(5, 0, 5), Vector3.ZERO)
+	var far_b = BulletLogic.BulletState.new(Vector3(200, 0, 0), Vector3.ZERO)
+	var bullets := [near_b, far_b]
+	BulletLogic.cull_out_of_range(bullets, Vector3.ZERO, 60.0)
+	assert_true(near_b.active, "範囲内の弾は残る")
+	assert_false(far_b.active, "範囲外の弾は非アクティブになる")
+
+func test_cull_out_of_range_ignores_already_inactive() -> void:
+	var b = BulletLogic.BulletState.new(Vector3(200, 0, 0), Vector3.ZERO)
+	b.active = false
+	BulletLogic.cull_out_of_range([b], Vector3.ZERO, 60.0)
+	assert_false(b.active, "すでに非アクティブな弾はそのまま")
+
 func test_determinism_different_seed_differs() -> void:
 	var rng1 := RandomNumberGenerator.new()
 	var rng2 := RandomNumberGenerator.new()

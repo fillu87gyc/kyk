@@ -1,12 +1,10 @@
-[gd_scene load_steps=14 format=3 uid="uid://bkouya0game01"]
+[gd_scene load_steps=16 format=3 uid="uid://bkouya0game01"]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
 [ext_resource type="Script" path="res://scripts/bullet_manager.gd" id="3_bullets"]
 [ext_resource type="Script" path="res://core/procedural_presenter.gd" id="4_presenter"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_player"]
-size = Vector3(0.6, 0.2, 1.0)
+[ext_resource type="Script" path="res://core/procedural_player_presenter.gd" id="5_playerpresenter"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_player"]
 size = Vector3(0.6, 0.2, 1.0)
@@ -23,6 +21,14 @@ height = 0.30
 
 [sub_resource type="StandardMaterial3D" id="Mat_hitvis"]
 albedo_color = Color(1, 1, 0, 0.5)
+transparency = 1
+
+[sub_resource type="SphereMesh" id="SphereMesh_grazevis"]
+radius = 0.40
+height = 0.80
+
+[sub_resource type="StandardMaterial3D" id="Mat_grazevis"]
+albedo_color = Color(1, 0.5, 0, 0.35)
 transparency = 1
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
@@ -48,16 +54,17 @@ environment = SubResource("Env_world")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 10)
 light_energy = 1.5
+shadow_enabled = true
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.819152, 0.573576, 0, -0.573576, 0.819152, 0, 10, 15)
-fov = 55.0
+fov = 70.0
 
 [node name="Player" type="CharacterBody3D" parent="."]
 script = ExtResource("2_player")
 
-[node name="PlayerMesh" type="MeshInstance3D" parent="Player"]
-mesh = SubResource("BoxMesh_player")
+[node name="PlayerPresenterSlot" type="Node3D" parent="Player"]
+script = ExtResource("5_playerpresenter")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 shape = SubResource("BoxShape3D_player")
@@ -66,6 +73,11 @@ shape = SubResource("BoxShape3D_player")
 mesh = SubResource("SphereMesh_hitvis")
 visible = false
 material_override = SubResource("Mat_hitvis")
+
+[node name="GrazeVisual" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("SphereMesh_grazevis")
+visible = false
+material_override = SubResource("Mat_grazevis")
 
 [node name="BulletManager" type="Node3D" parent="."]
 script = ExtResource("3_bullets")
@@ -99,3 +111,52 @@ offset_right = 300.0
 offset_bottom = 118.0
 theme_override_font_sizes/font_size = 24
 text = "GRAZE: 0"
+
+[node name="PowerLabel" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 122.0
+offset_right = 300.0
+offset_bottom = 152.0
+theme_override_font_sizes/font_size = 24
+text = "POWER: 0"
+
+[node name="BombsLabel" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 156.0
+offset_right = 300.0
+offset_bottom = 186.0
+theme_override_font_sizes/font_size = 24
+text = "BOMB: 0"
+
+[node name="DashLabel" type="Label" parent="HUD"]
+offset_left = 20.0
+offset_top = 190.0
+offset_right = 300.0
+offset_bottom = 220.0
+theme_override_font_sizes/font_size = 24
+text = "DASH: READY"
+
+[node name="BossHpLabel" type="Label" parent="HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+text = "BOSS HP: 100%"
+
+[node name="SpellLabel" type="Label" parent="HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 54.0
+offset_right = 200.0
+offset_bottom = 84.0
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+modulate = Color(1, 0.85, 0.2, 1)
+text = ""

@@ -1,7 +1,7 @@
 # 単体テスト: ProceduralPresenter（デフォルトの幾何学ボス表現）
 #
 # カバーする CUJ:
-#   CUJ-8  ボス表現（ステート/HP/スペル → 見た目更新）
+#   CUJ-8  ボス表現（ステート/HP/スペル → 見た目更新、前後が分かる形状・プレイヤー追従）
 #
 # _ready() でメッシュ・マテリアルを生成するため SceneTree に追加してから検証する。
 extends GutTest
@@ -17,6 +17,33 @@ func test_ready_builds_mesh_and_material() -> void:
 	assert_not_null(_p._mesh_instance, "_ready でメッシュインスタンスを生成する")
 	assert_not_null(_p._material, "_ready でマテリアルを生成する")
 	assert_true(_p.is_valid(), "生成後は有効")
+
+func test_ready_builds_directional_parts() -> void:
+	assert_not_null(_p._cannon_material, "_ready で前方を示す砲身マテリアルを生成する")
+	assert_gt(_p._mesh_instance.get_child_count(), 0,
+		"本体に砲身/スラスター/翼などの子パーツが付く")
+
+func test_defeated_dims_cannon_too() -> void:
+	_p.on_state_changed("DEFEATED")
+	assert_almost_eq(_p._cannon_material.emission_energy_multiplier, 0.0, 0.0001,
+		"撃破で砲身の発光も消える")
+
+func test_face_player_rotates_toward_player() -> void:
+	var player := Node3D.new()
+	player.add_to_group("player")
+	player.global_position = Vector3(5.0, 0.0, 10.0)
+	add_child_autofree(player)
+	_p.global_position = Vector3.ZERO
+	_p.tick(0.016)
+	var forward := -_p.global_transform.basis.z
+	var expected := Vector3(5.0, 0.0, 10.0).normalized()
+	assert_almost_eq(forward.x, expected.x, 0.01, "プレイヤーの方向へ向きを変える")
+	assert_almost_eq(forward.z, expected.z, 0.01, "プレイヤーの方向へ向きを変える")
+
+func test_face_player_noop_without_player() -> void:
+	# プレイヤーが SceneTree にいない場合は回転せず例外も出ない
+	_p.tick(0.016)
+	assert_eq(_p.rotation, Vector3.ZERO, "プレイヤー不在なら向きは変わらない")
 
 func test_state_attack_increases_pulse() -> void:
 	_p.on_state_changed("IDLE")

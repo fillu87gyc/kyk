@@ -19,6 +19,7 @@ static func load_boss_presenter() -> BossPresenter:
 							if scr:
 								var presenter: BossPresenter = scr.new()
 								if presenter.is_valid():
+									presenter.hit_radius_override = float(meta.get("hit_radius_override", -1.0))
 									print("[ModLoader] loaded: ", meta.get("name", entry))
 									return presenter
 			entry = dir.get_next()

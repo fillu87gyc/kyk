@@ -37,7 +37,7 @@ curl -L https://github.com/fillu87gyc/kyk/releases/latest/download/kouya-kou-lin
 | エンジン | Godot 4 |
 | 言語 | GDScript（必要に応じてGDExtension/C++） |
 | 弾幕レンダリング | MultiMeshInstance3D → RenderingServer |
-| 自動テスト | GUT + `godot --headless`（単体64＋E2E11＝計75本／[TESTING.md](TESTING.md)）|
+| 自動テスト | GUT + `godot --headless`（単体166＋E2E29＝計195本／[TESTING.md](TESTING.md)）|
 | CI | GitHub Actions（テスト緑をゲートに自動ビルド＆Releases 配布） |
 | ターゲット | Steam Deck（Linux / x86_64） |
 | ライセンス | MIT |
@@ -51,7 +51,7 @@ git tag v0.1.0 && git push origin v0.1.0   （または main への push / PR）
         │
         ▼
 GitHub Actions (.github/workflows/build.yml)
-  job: test          GUT headless で全テスト（75本）  ← 赤なら即停止
+  job: test          GUT headless で全テスト（195本）  ← 赤なら即停止
         │ needs: test（かつ PR 以外）
         ▼
   job: export-linux  Linux x86_64 をエクスポート → Releases にアップロード
@@ -90,11 +90,21 @@ DECK_HOST=192.168.1.XX DECK_RUN=1 ./deploy.sh  # 転送＋実機起動
 
 `core/` 以下。SceneTree に一切依存しない純粋ロジック：
 
-- `player_logic.gd` — 移動速度・境界・当たり/グレイズ判定
-- `bullet_logic.gd` — 弾の step・ring/aimed スポーン（seed 固定・決定論）
-- `boss_presenter.gd` — BossPresenter インターフェース定義
-- `procedural_presenter.gd` — デフォルト幾何学ボス
-- `mod_loader.gd` — mods/ スキャン → Presenter 選択 → フォールバック
+- `player_logic.gd` — 移動速度（ブースト含む）・境界・当たり/グレイズ判定
+- `bullet_logic.gd` — 弾の step・ring/aimed/helix/spiral/dive スポーン・奥カリング（seed 固定・決定論）
+- `bullet_dsl.gd` — 弾幕パターンの文字列DSLパーサー（`ring(count=16, ...)` 等）
+- `spatial_grid.gd` — 当たり判定のブロードフェーズ用一様格子（数万発規模での総当たり回避）
+- `score_logic.gd` — グレイズ/ボス撃破のスコア計算
+- `dash_controller.gd` — 緊急回避ダッシュの発動・無敵・クールダウン管理
+- `boss_presenter.gd` / `player_presenter.gd` — Presenter インターフェース定義（ボス/自機）
+- `procedural_presenter.gd` / `procedural_player_presenter.gd` — デフォルト幾何学表現
+- `boss_state_machine.gd` — HPしきい値によるフェーズ遷移・スペル宣言・撃破判定
+- `weapon_logic.gd` — 自機オートファイア・グレイズ連動パワーアップ・対ボス当たり判定
+- `hit_stop.gd` — 被弾/グレイズ時のヒットストップ（`Engine.time_scale` 制御の純粋ロジック）
+- `difficulty.gd` — EASY/NORMAL/HARD/LUNATIC プリセットと選択ロジック
+- `save_data.gd` — ハイスコアの比較・永続化（ConfigFile）
+- `stage_dressing.gd` — 月・稜線・グリッド床・パーティクルの手続き生成（外部アセット無し）
+- `mod_loader.gd` — mods/ スキャン → Presenter 選択 → フォールバック（hit_radius_override 反映）
 
 ### 描画/手触り層（Steam Deck実機で確認）
 
@@ -140,6 +150,10 @@ MODの作り方は [mods/README.md](mods/README.md) を参照。
 | 4 | ステージ・世界観・速度演出 | 1週間 |
 | 5 | ゲームループ・仕上げ | 1週間 |
 | **合計** | | **約8〜9週間** |
+
+Phase 0〜5 の **Layer A（ロジック・構造コード／GUTでテスト可能な範囲）は実装済み**。
+BGM/SE・MOD用3Dモデルなど実アセットが必要な要素と、Steam Deck実機での
+Layer B（手触り・フレームレート確認）は未着手（詳細は [TESTING.md](TESTING.md) 6章）。
 
 ## ライセンス
 
