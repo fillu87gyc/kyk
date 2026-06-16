@@ -46,6 +46,27 @@ func test_velocity_scales_with_input_magnitude() -> void:
 	assert_almost_eq(half.length(), PlayerLogic.NORMAL_SPEED * 0.5, 0.001,
 		"入力 0.5 なら速度も半分")
 
+func test_boost_speed_exact_value() -> void:
+	var vel := PlayerLogic.calc_velocity(Vector2(1.0, 0.0), false, 0.016, true)
+	assert_almost_eq(vel.length(), PlayerLogic.BOOST_SPEED, 0.001,
+		"ブースト中の速度は定数 BOOST_SPEED と一致する")
+
+func test_boost_is_faster_than_normal() -> void:
+	var normal := PlayerLogic.calc_velocity(Vector2(1.0, 0.0), false, 0.016, false)
+	var boosted := PlayerLogic.calc_velocity(Vector2(1.0, 0.0), false, 0.016, true)
+	assert_gt(boosted.length(), normal.length(), "ブースト中は通常時より速い")
+
+func test_boost_overrides_focus() -> void:
+	var boosted := PlayerLogic.calc_velocity(Vector2(1.0, 0.0), true, 0.016, true)
+	assert_almost_eq(boosted.length(), PlayerLogic.BOOST_SPEED, 0.001,
+		"フォーカス中でもブーストが優先される")
+
+func test_default_is_boosting_false() -> void:
+	# 既存呼び出し（3引数）との後方互換性を保つ
+	var vel := PlayerLogic.calc_velocity(Vector2(1.0, 0.0), false, 0.016)
+	assert_almost_eq(vel.length(), PlayerLogic.NORMAL_SPEED, 0.001,
+		"is_boosting 省略時は通常速度のまま")
+
 # --- clamp_position -------------------------------------------------------
 
 func test_clamp_within_bounds() -> void:

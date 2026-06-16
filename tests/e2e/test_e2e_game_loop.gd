@@ -16,6 +16,9 @@
 #   E2E-13 停止中はボス表現を駆動しない       … CUJ-8
 #   E2E-14 Player は player グループに属する … CUJ-3, CUJ-8
 #   E2E-15 ゲームループでボスがプレイヤーを向く … CUJ-8
+#   E2E-16 自機 Presenter が被弾でフラッシュする … CUJ-5, CUJ-8
+#   E2E-17 デバッグトグルで喰らい/グレイズ判定が見える … CUJ-5, CUJ-6
+#   E2E-18 ブーストでカメラが引きFOVが開く        … CUJ-3
 #
 # ノードは独自スクリプトのメンバーへ動的アクセスするため、型注釈を付けず Variant で扱う。
 extends GutTest
@@ -155,3 +158,37 @@ func test_stopped_game_does_not_drive_boss_animation() -> void:
 	_game._physics_process(0.1)
 	assert_almost_eq(presenter._mesh_instance.scale.x, 1.0, 0.0001,
 		"停止中はゲームループがボス表現を進めない")
+
+# E2E-16 ---------------------------------------------------------------
+func test_player_presenter_flashes_on_hit() -> void:
+	_game.start(777)
+	var p = _player()
+	var presenter = p.get_node("PlayerPresenterSlot")
+	var base_energy: float = presenter._material.emission_energy_multiplier
+	p.take_hit()
+	assert_gt(presenter._material.emission_energy_multiplier, base_energy,
+		"被弾で自機 Presenter が発光フラッシュする")
+
+# E2E-17 ---------------------------------------------------------------
+func test_debug_toggle_reveals_hit_and_graze_radius() -> void:
+	var p = _player()
+	var hitbox = p.get_node("HitboxVisual")
+	var grazebox = p.get_node("GrazeVisual")
+	assert_false(hitbox.visible, "通常時は喰らい判定が非表示")
+	assert_false(grazebox.visible, "通常時はグレイズ判定が非表示")
+	p.toggle_debug_hitbox()
+	assert_true(hitbox.visible, "トグルで喰らい判定が見える")
+	assert_true(grazebox.visible, "トグルでグレイズ判定が見える")
+	p.toggle_debug_hitbox()
+	assert_false(hitbox.visible, "再トグルで非表示に戻る")
+	assert_false(grazebox.visible, "再トグルで非表示に戻る")
+
+# E2E-18 ---------------------------------------------------------------
+func test_boost_widens_fov_and_pulls_camera_back() -> void:
+	_game.start(777)
+	var p = _player()
+	var camera = _game.get_node("Camera3D")
+	var normal_fov: float = camera.fov
+	p.is_boosting = true
+	_game._physics_process(0.5)
+	assert_gt(camera.fov, normal_fov, "ブースト中はFOVが広がる")

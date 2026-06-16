@@ -4,8 +4,12 @@ signal game_over(score: int)
 signal score_updated(score: int)
 
 const CAM_OFFSET := Vector3(0.0, 4.0, 7.0)
+const CAM_BOOST_OFFSET := Vector3(0.0, 4.5, 9.5)
 const CAM_LOOK_AHEAD := 9.0
 const CAM_FOLLOW_LERP := 5.0
+const FOV_NORMAL := 70.0
+const FOV_BOOST := 85.0
+const FOV_LERP := 4.0
 
 var score := 0
 var _graze_score := 10
@@ -62,12 +66,15 @@ func _physics_process(delta: float) -> void:
 
 func _update_camera(delta: float) -> void:
 	var player_pos := _player.global_position
-	var target_pos := player_pos + CAM_OFFSET
+	var offset := CAM_BOOST_OFFSET if _player.is_boosting else CAM_OFFSET
+	var target_pos := player_pos + offset
 	_camera.global_position = _camera.global_position.lerp(
 		target_pos, delta * CAM_FOLLOW_LERP)
 	var look_target := Vector3(
 		player_pos.x, player_pos.y + 0.5, player_pos.z - CAM_LOOK_AHEAD)
 	_camera.look_at(look_target, Vector3.UP)
+	var target_fov := FOV_BOOST if _player.is_boosting else FOV_NORMAL
+	_camera.fov = lerp(_camera.fov, target_fov, delta * FOV_LERP)
 
 func _on_bullet_hit(_pos: Vector3) -> void:
 	_player.take_hit()

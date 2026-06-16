@@ -2,14 +2,19 @@ class_name PlayerLogic
 
 const NORMAL_SPEED := 8.0
 const FOCUS_SPEED := 3.5
+const BOOST_SPEED := 14.0
 const BOUNDS_X := 6.0
 const BOUNDS_Z_MIN := -2.0
 const BOUNDS_Z_MAX := 10.0
 const HIT_RADIUS := 0.15
 const GRAZE_RADIUS := 0.40
 
-static func calc_velocity(input_dir: Vector2, is_focused: bool, _delta: float) -> Vector3:
-	var speed := FOCUS_SPEED if is_focused else NORMAL_SPEED
+static func calc_velocity(input_dir: Vector2, is_focused: bool, _delta: float, is_boosting: bool = false) -> Vector3:
+	var speed := NORMAL_SPEED
+	if is_boosting:
+		speed = BOOST_SPEED
+	elif is_focused:
+		speed = FOCUS_SPEED
 	return Vector3(input_dir.x, 0.0, input_dir.y) * speed
 
 static func clamp_position(pos: Vector3) -> Vector3:
